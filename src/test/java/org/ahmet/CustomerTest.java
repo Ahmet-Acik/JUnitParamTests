@@ -77,4 +77,37 @@ class CustomerTest {
         );
     }
 
+
+    @ParameterizedTest
+    @MethodSource("provideCustomersWithMixedOrders")
+    void testValidateMixedOrders(Customer customer, boolean expected) {
+        Predicate<Customer> validator = c -> c.getOrders()
+                .stream()
+                .allMatch(p -> p.getPrice() > 0);
+        assertEquals(expected, customer.validate(validator));
+    }
+
+    @ParameterizedTest
+    @MethodSource("provideCustomersWithDifferentDiscounts")
+    void testProcessWithDifferentDiscounts(Customer customer, double expectedTotal) {
+        Function<Customer, Double> processor = c -> c.getOrders()
+                .stream()
+                .mapToDouble(p -> p.getPrice() * 0.85).sum(); // 15% discount
+        assertEquals(expectedTotal, customer.process(processor), 1e-9);
+    }
+
+    private static Stream<Arguments> provideCustomersWithMixedOrders() {
+        return Stream.of(
+                Arguments.of(new Customer("Eve", Arrays.asList(new Product("Tablet", 300.0, 1), new Product("Headphones", -50.0, 1))), false),
+                Arguments.of(new Customer("Frank", Arrays.asList(new Product("Monitor", 200.0, 1), new Product("Keyboard", 50.0, 1))), true)
+        );
+    }
+
+    private static Stream<Arguments> provideCustomersWithDifferentDiscounts() {
+        return Stream.of(
+                Arguments.of(new Customer("Grace", Arrays.asList(new Product("Camera", 800.0, 1), new Product("Tripod", 100.0, 1))), 765.0),
+                Arguments.of(new Customer("Hank", Arrays.asList(new Product("Printer", 150.0, 1), new Product("Ink", 50.0, 1))), 170.0)
+        );
+    }
+
 }
